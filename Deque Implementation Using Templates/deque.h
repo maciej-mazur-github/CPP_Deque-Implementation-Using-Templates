@@ -59,10 +59,10 @@ public:
 
 	void pushFront(T& arg);
 	void pushBack(T& arg);
-	void setChosenNode(int nodeNumber);
-	void printChosenNodeArray();
 	T popBack();
 	T popFront();
+	void setChosenNode(int nodeNumber);
+	void printChosenNodeArray();
 	void removeChosenElement();
 	void addElement(T& addedElement);
 	T& returnChosenElement(int index);
@@ -93,3 +93,74 @@ Deque<T, arraySize>::~Deque()
 		removeLastNode();
 	}
 }
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::pushBack(T& arg)
+{
+	if (!firstNodePtr || lastNodePtr->arrayDirection == leftWiseExpandable || (lastNodePtr->arrayDirection == rightWiseExpandable && lastNodePtr->arrayItemsCounter == arraySize))   // when Deque is empty or it only contains leftwise expandable node arrays, or when its last node array is rightwise expandable but it is full and therefore Deque needs an expansion by another rightwise expandable node array to contain the newly pushed element
+	{
+		addRightWiseNode();
+		lastNodePtr[0] = arg;    // after expanding Deque by another rightwise expandable node array the newly pushed back element will be placed at [0] position
+	}
+	else
+	{
+		int position = lastNodePtr->arrayItemsCounter;
+		lastNodePtr[position] = arg;
+	}
+
+	return;
+}
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::pushFront(T& arg)
+{
+	if (!firstNodePtr || firstNodePtr->arrayDirection == rightWiseExpandable || (firstNodePtr->arrayDirection == leftWiseExpandable && firstNodePtr->arrayItemsCounter == arraySize))   // analogous to pushBack(T& arg) start
+	{
+		addLeftWiseNode();
+		firstNodePtr[arraySize - 1] = arg;
+	}
+	else
+	{
+		int position = arraySize - firstNodePtr->arrayItemsCounter - 1;
+		firstNodePtr[position] = arg;
+	}
+}
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::addLeftWiseNode()
+{
+	Node* newNodePtr = new Node();    // default constructor argument value is rightWiseExpandable
+
+	if (!firstNodePtr)              // if Deque was empty the newly added node has to become either the first and the last node
+	{
+		firstNodePtr = lastNodePtr = newNodePtr;
+	}
+	else
+	{
+		firstNodePtr->previousNodePtr = newNodePtr;
+		newNodePtr->nextNodePtr = firstNodePtr;
+		firstNodePtr = newNodePtr;
+	}
+}
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::addRightWiseNode()
+{
+	Node* newNodePtr = new Node();    // default constructor argument value is rightWiseExpandable
+
+	if (!firstNodePtr)              // if Deque was empty the newly added node has to become either the first and the last node
+	{
+		firstNodePtr = lastNodePtr = newNodePtr;
+	}
+	else
+	{
+		lastNodePtr->nextNodePtr = newNodePtr;
+		newNodePtr->previousNodePtr = lastNodePtr;
+		lastNodePtr = newNodePtr;
+	}
+}
+
