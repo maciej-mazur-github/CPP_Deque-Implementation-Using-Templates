@@ -41,4 +41,55 @@ class Deque
 			}
 		}
 	};
+
+	Node* firstNodePtr;
+	Node* lastNodePtr;
+	Node* chosenNodePtr;
+	int numberOfNodes;
+	int numberOfElements;
+
+public:
+	Deque()
+	{
+		firstNodePtr = lastNodePtr = chosenNodePtr = nullptr;
+		numberOfNodes = 0;
+	}
+
+	~Deque();
+
+	void pushFront(T& arg);
+	void pushBack(T& arg);
+	void setChosenNode(int nodeNumber);
+	void printChosenNodeArray();
+	T popBack();
+	T popFront();
+	void removeChosenElement();
+	void addElement(T& addedElement);
+	T& returnChosenElement(int index);
+	void setChosenElementIndex(int index);
+
+	friend ostream& operator<< <T, arraySize> (ostream& out, Deque& arg);
+
+private:
+	void gotoNext_node();
+	void addLeftWiseNode();
+	void addRightWiseNode();
+	//void remove_remaining_node();    // remove the one and only node from dequeue (1-node deck)
+	void removeLastNode();   // remove the far right node
+	void removeFirstNode();
+	void shiftElementsRight();
+	void shiftElementsLeft();
 };
+
+
+template <class T, int arraySize>
+Deque<T, arraySize>::~Deque()
+{
+	if (!firstNodePtr)     // if Deque is empty
+		return;
+
+	while (lastNodePtr)
+	{
+		removeLastNode();
+	}
+}
