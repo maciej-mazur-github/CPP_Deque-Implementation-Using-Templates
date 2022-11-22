@@ -61,7 +61,6 @@ public:
 	void pushBack(T& arg);
 	T popBack();
 	T popFront();
-	void setChosenNode(int nodeNumber);
 	void removeChosenElement();
 	void addElement(T& addedElement);
 	T& returnChosenElement(int index);
@@ -82,8 +81,71 @@ private:
 	void shiftElementsRightForRemoval(Node* startNode, int startPosition);    
 	void shiftElementsLeftForRemoval(Node* startNode, int startPosition);
 	void printChosenNodeArray();
+	bool setChosenNode(int nodeNumber);
 };
 
+
+
+
+//################################################################################################
+//################################################################################################
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::setChosenElementIndex(int index)
+{
+	if (!firstNodePtr)
+	{
+		cout << "\nThe list is empty...\n" << endl;
+		return;
+	}
+
+
+	if (index > (numberOfElements - 1))
+	{
+		cout << "\nThe given number exceeds the amount of elements in the Deque..." << endl;
+		return;
+	}
+
+	int bias = 0;
+
+	if (firstNodePtr->arrayDirection == leftWiseExpandable)
+	{
+		bias = arraySize - firstNodePtr->arrayItemsCounter;
+	}
+
+	int biasedIndex = index + bias;
+	int nodeNumberToGo = biasedIndex / arraySize;
+	int elementPositionInNode = biasedIndex % arraySize;
+
+	if (setChosenNode(nodeNumberToGo))
+	{
+		chosenNodePtr->chosenPosition = elementPositionInNode;
+	}
+	else
+	{
+		cout << "\nIncorrect number node access attempt. Please try again...\n" << endl;
+	}
+}
+
+
+template <class T, int arraySize>
+bool Deque<T, arraySize>::setChosenNode(int nodeNumber)
+{
+	if (nodeNumber > numberOfNodes)
+	{
+		return false;
+	}
+
+	chosenNodePtr = firstNodePtr;
+
+	for (int i = 0; i < nodeNumber; i++)
+	{
+		chosenNodePtr = chosenNodePtr->nextNodePtr;
+	}
+
+	return true;
+}
 
 
 template <class T, int arraySize>
