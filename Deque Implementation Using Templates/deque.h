@@ -62,12 +62,12 @@ public:
 	T popBack();
 	T popFront();
 	void setChosenNode(int nodeNumber);
-	void printChosenNodeArray();
 	void removeChosenElement();
 	void addElement(T& addedElement);
 	T& returnChosenElement(int index);
 	void setChosenElementIndex(int index);
 
+	//friend ostream& operator<< <T, tab_size> (ostream& out, deck& arg);
 	friend ostream& operator<< <T, arraySize> (ostream& out, Deque& arg);
 
 private:
@@ -77,11 +77,84 @@ private:
 	//void remove_remaining_node();    // remove the one and only node from dequeue (1-node deck)
 	void removeLastNode();   // remove the far right node
 	void removeFirstNode();
-	void shiftElementsRightForRemoval(Node* startNode, int startPosition);
-	void shiftElementsLeftForRemoval(Node* startNode, int startPosition);
-	void shiftElementsRightForRemoval(Node* endNode, int endPosition);    // applicable only for removal inside letfwise expandable node arrays
+	void shiftElementsRightForInsertion(Node* startNode, int startPosition);
+	void shiftElementsLeftForInsertion(Node* startNode, int startPosition);
+	void shiftElementsRightForRemoval(Node* startNode, int startPosition);    
 	void shiftElementsLeftForRemoval(Node* endNode, int endPosition);
+	void printChosenNodeArray();
 };
+
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::printChosenNodeArray()
+{
+	int underscoresNumber = arraySize - chosenNodePtr->arrayItemsCounter;
+	int elementNumber = chosenNodePtr->arrayItemsCounter;
+	int bias = 0;     // to call proper array elements depending on whether the array is left or rightwise expandable
+
+	if (chosenNodePtr->arrayDirection == leftWiseExpandable && underscoresNumber > 0)
+	{
+		for (int i = 0; i < underscoresNumber; i++)
+		{
+			cout << "_\t";
+		}
+
+		bias = arraySize - chosenNodePtr->arrayItemsCounter;
+	}
+
+	for (int i = 0; i < elementNumber; i++)
+	{
+		cout << chosenNodePtr->arrayPtr[i + bias] + "\t";
+	}
+
+	if (chosenNodePtr->arrayDirection == rightWiseExpandable && underscoresNumber > 0)
+	{
+		for (int i = 0; i < underscoresNumber; i++)
+		{
+			cout << "_\t";
+		}
+	}
+}
+
+
+template <class T, int arraySize>
+ostream& operator<<(ostream& out, Deque<T, arraySize>& arg)
+{
+	if (!arg.firstNodePtr)
+	{
+		out << "\n\nThe list is empty..." << endl;
+		return out;
+	}
+
+	typename Deque<T, arraySize>::Node* tempNode = arg.chosenNodePtr;    // to restore the original position of chosenNodePtr at the end
+	arg.chosenNodePtr = arg.firstNodePtr;
+
+	cout << "Current Deque content is:\n";
+
+	while (arg.chosenNodePtr)
+	{
+		arg.printChosenNodeArray();
+		arg.gotoNext_node();
+	}
+
+	arg.chosenNodePtr = tempNode;  // restoring the original chosenNodePtr position
+	return out;
+}
+
+
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::gotoNext_node()
+{
+	if (!chosenNodePtr)
+	{
+		return;
+	}
+
+	chosenNodePtr = chosenNodePtr->nextNodePtr;
+}
 
 
 template <class T, int arraySize>
@@ -181,7 +254,7 @@ void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int star
 
 		int sourcePosition = destinationPosition - 1;
 
-		for (; sourcePosition > = sourcePositionLimit; sourcePosition--)
+		for (; sourcePosition >= sourcePositionLimit; sourcePosition--)
 		{
 			chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->arrayPtr[sourcePosition];
 			destinationPosition--;
@@ -193,7 +266,7 @@ void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int star
 			{
 				sourcePosition = arraySize - 1;
 				destinationPosition = 0;  
-				chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->->previousNodePtr->arrayPtr[sourcePosition];
+				chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->previousNodePtr->arrayPtr[sourcePosition];
 			}
 		}
 
@@ -272,7 +345,7 @@ void Deque<T, arraySize>::removeFirstNode()
 {
 	if (firstNodePtr == lastNodePtr)    // if there is only one remaining node left in Deque
 	{
-		~Deque();
+		this->~Deque();
 		return;
 	}
 
@@ -292,7 +365,7 @@ void Deque<T, arraySize>::removeLastNode()
 {
 	if (firstNodePtr == lastNodePtr)     // if there is only one remaining node left in Deque
 	{
-		~Deque();
+		this->~Deque();
 		return;
 	}
 
