@@ -80,10 +80,178 @@ private:
 	void shiftElementsRightForInsertion(Node* startNode, int startPosition);
 	void shiftElementsLeftForInsertion(Node* startNode, int startPosition);
 	void shiftElementsRightForRemoval(Node* startNode, int startPosition);    
-	void shiftElementsLeftForRemoval(Node* endNode, int endPosition);
+	void shiftElementsLeftForRemoval(Node* startNode, int startPosition);
 	void printChosenNodeArray();
 };
 
+
+
+template <class T, int arraySize>
+T Deque<T, arraySize>::popBack()
+{
+	if (!lastNodePtr)
+	{
+		return nullptr;
+	}
+
+	T returnedValue = nullptr;
+
+	if (lastNodePtr->arrayItemsCounter == 1)
+	{
+		if (lastNodePtr->arrayDirection == leftWiseExpandable)
+		{
+			returnedValue = lastNodePtr[arraySize - 1];
+		}
+		else
+		{
+			returnedValue = lastNodePtr[0];
+		}
+
+
+		if (lastNodePtr == firstNodePtr)   // if Deque contains one node array only, so after popping its last element this only one node should be removed, which actually is a deletion of Deque, hence the destructor will be called
+		{
+			this->~Deque();
+			return returnedValue;
+		}
+		else
+		{
+			removeLastNode();
+		}
+	}
+	else
+	{
+		int position;
+
+		if (lastNodePtr->arrayDirection == rightWiseExpandable)
+		{
+			position = arraySize - lastNodePtr->arrayItemsCounter;
+			returnedValue = lastNodePtr->arrayPtr[position];
+			lastNodePtr->arrayPtr[position] = nullptr;
+		}
+		else     // if the last node is leftwise expandable and has more than 1 element, then after popping the desired element all left hand side elements need to be shifted right to fill in the gap
+		{
+			position = arraySize - 1;   // in the current 'else' case the popped element will always be the last position in the array
+			returnedValue = lastNodePtr->arrayPtr[position];
+			shiftElementsRightForRemoval(lastNodePtr, position);
+		}
+	}
+
+	numberOfElements--;
+	return returnedValue;
+}
+
+
+
+template <class T, int arraySize>
+T Deque<T, arraySize>::popFront()
+{
+	if (!lastNodePtr)
+	{
+		return nullptr;
+	}
+
+	T returnedValue = nullptr;
+
+	if (firstNodePtr->arrayItemsCounter == 1)
+	{
+		if (lastNodePtr->arrayDirection == leftWiseExpandable)
+		{
+			returnedValue = lastNodePtr[arraySize - 1];
+		}
+		else
+		{
+			returnedValue = lastNodePtr[0];
+		}
+
+
+		if (lastNodePtr == firstNodePtr)   // if Deque contains one node array only, so after popping its last element this only one node should be removed, which actually is a deletion of Deque, hence the destructor will be called
+		{
+			this->~Deque();
+			return returnedValue;
+		}
+		else
+		{
+			removeFirstNode();
+		}
+	}
+	else      // if there is more than one elements in the first node array
+	{
+		int position;
+
+		if (firstNodePtr->arrayDirection == leftWiseExpandable)
+		{
+			position = arraySize - firstNodePtr->arrayItemsCounter;
+			returnedValue = firstNodePtr->arrayPtr[position];
+			firstNodePtr->arrayPtr[position] = nullptr;
+		}
+		else     // if the last node is righttwise expandable and has more than 1 element, then after popping the desired element all right hand side elements need to be shifted left to fill in the gap
+		{
+			position = 0;   // in the current 'else' case the popped element will always be the last position in the array
+			returnedValue = firstNodePtr->arrayPtr[position];
+			shiftElementsLeftForRemoval(firstNodePtr, position);
+		}
+	}
+
+	numberOfElements--;
+	return returnedValue;
+}
+
+
+
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::shiftElementsLeftForRemoval(Node* startNode, int startPosition)
+{
+	chosenNodePtr = startNode;
+	int destinationPosition = startPosition;
+	int sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+
+	if (sourcePositionLimit == destinationPosition && !chosenNodePtr->nextNodePtr)   // if the startPosition is actually the last element in Deque
+	{
+		chosenNodePtr->arrayPtr[destinationPosition] = nullptr;
+		return;
+	}
+
+	while (chosenNodePtr)
+	{
+		if (chosenNodePtr->arrayItemsCounter == 1)
+		{
+			removeLastNode();
+			return;
+		}
+
+		int sourcePosition = destinationPosition + 1;
+
+		for (; sourcePosition <= sourcePositionLimit; sourcePosition++)
+		{
+			chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->arrayPtr[sourcePosition];
+			destinationPosition++;
+		}
+
+		if (chosenNodePtr->nextNodePtr)
+		{
+			if (chosenNodePtr->nextNodePtr->arrayItemsCounter > 0)
+			{
+				sourcePosition = 0;
+				destinationPosition = arraySize - 1;
+				chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->nextNodePtr->arrayPtr[sourcePosition];
+			}
+		}
+		else
+		{
+			chosenNodePtr->arrayPtr[sourcePosition] = nullptr;   // nullification of the far left element to complete the shifting
+		}
+
+		chosenNodePtr = chosenNodePtr->nextNodePtr;
+		destinationPosition = 0;
+
+		if (chosenNodePtr)    // to avoid memory access violation when calling arrayItemsCounter of a non-existent NULL chosenNodePtr
+		{
+			sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+		}
+	}
+}
 
 
 template <class T, int arraySize>
@@ -175,59 +343,59 @@ Deque<T, arraySize>::~Deque()
 }
 
 
-template <class T, int arraySize>
-T Deque<T, arraySize>::popBack()
-{
-	if (!lastNodePtr)
-	{
-		return nullptr;
-	}
-
-	T returnedValue = nullptr;
-
-	if (lastNodePtr->arrayItemsCounter == 1)    
-	{
-		if (lastNodePtr->arrayDirection == leftWiseExpandable)
-		{
-			returnedValue = lastNodePtr[arraySize - 1];
-		}
-		else
-		{
-			returnedValue = lastNodePtr[0];
-		}
-
-
-		if (lastNodePtr == firstNodePtr)   // if Deque contains one node array only, so after popping its last element this only one node should be removed, which actually is a deletion of Deque, hence the destructor will be called
-		{
-			~Deque();
-			return returnedValue;
-		}
-		else
-		{
-			removeLastNode();
-		}
-	}
-	else
-	{
-		int position;
-
-		if (lastNodePtr->arrayDirection == rightWiseExpandable)
-		{
-			position = arraySize - lastNodePtr->arrayItemsCounter;
-			returnedValue = lastNodePtr->arrayPtr[position];
-			lastNodePtr->arrayPtr[position] = nullptr;
-		}
-		else     // if the last node is leftwise expandable and has more than 1 element, then after popping the desired element all left hand side elements need to be shifted right to fill in the gap
-		{
-			position = arraySize - 1;   // in the current 'else' case the popped element will always be the last position in the array
-			returnedValue = lastNodePtr->arrayPtr[position];
-			shiftElementsRightForRemoval(lastNodePtr, position);
-		}
-	}
-
-	numberOfElements--;
-	return returnedValue;
-}
+//template <class T, int arraySize>
+//T Deque<T, arraySize>::popBack()
+//{
+//	if (!lastNodePtr)
+//	{
+//		return nullptr;
+//	}
+//
+//	T returnedValue = nullptr;
+//
+//	if (lastNodePtr->arrayItemsCounter == 1)    
+//	{
+//		if (lastNodePtr->arrayDirection == leftWiseExpandable)
+//		{
+//			returnedValue = lastNodePtr[arraySize - 1];
+//		}
+//		else
+//		{
+//			returnedValue = lastNodePtr[0];
+//		}
+//
+//
+//		if (lastNodePtr == firstNodePtr)   // if Deque contains one node array only, so after popping its last element this only one node should be removed, which actually is a deletion of Deque, hence the destructor will be called
+//		{
+//			this->~Deque();
+//			return returnedValue;
+//		}
+//		else
+//		{
+//			removeLastNode();
+//		}
+//	}
+//	else
+//	{
+//		int position;
+//
+//		if (lastNodePtr->arrayDirection == rightWiseExpandable)
+//		{
+//			position = arraySize - lastNodePtr->arrayItemsCounter;
+//			returnedValue = lastNodePtr->arrayPtr[position];
+//			lastNodePtr->arrayPtr[position] = nullptr;
+//		}
+//		else     // if the last node is leftwise expandable and has more than 1 element, then after popping the desired element all left hand side elements need to be shifted right to fill in the gap
+//		{
+//			position = arraySize - 1;   // in the current 'else' case the popped element will always be the last position in the array
+//			returnedValue = lastNodePtr->arrayPtr[position];
+//			shiftElementsRightForRemoval(lastNodePtr, position);
+//		}
+//	}
+//
+//	numberOfElements--;
+//	return returnedValue;
+//}
 
 
 
@@ -269,74 +437,22 @@ void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int star
 				chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->previousNodePtr->arrayPtr[sourcePosition];
 			}
 		}
+		else
+		{
+			chosenNodePtr->arrayPtr[sourcePosition] = nullptr;   // nullification of the far left element to complete the shifting
+		}
 
 		chosenNodePtr = chosenNodePtr->previousNodePtr;
 		destinationPosition = arraySize - 1;
-		sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+
+		if(chosenNodePtr)    // to avoid memory access violation when calling arrayItemsCounter of a non-existent NULL chosenNodePtr
+		{
+			sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+		}
 	}
 }
 
-//template <class T, int arraySize>
-//void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int startPosition)
-//{
-//	chosenNodePtr = startNode;
-//	chosenNodePtr->chosenPosition = startPosition;
-//	Node* sourceNode;
-//	int sourcePosition;
-//	int destinationPosition;
-//
-//	while (chosenNodePtr)
-//	{
-//		destinationPosition = chosenNodePtr->chosenPosition;
-//
-//		if (destinationPosition == (arraySize - chosenNodePtr->arrayItemsCounter))    // if the start element is actually the first element in Deque then no shifting is needed, just this first element needs to be turned NULL
-//		{
-//			chosenNodePtr->arrayPtr[destinationPosition] = nullptr;
-//			chosenNodePtr->arrayItemsCounter--;
-//			numberOfElements--;
-//			return;
-//		}
-//
-//		for (; destinationPosition > (arraySize - chosenNodePtr->arrayItemsCounter); destinationPosition--)    // shift all elements but the one at position
-//		{
-//			chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->arrayPtr[destinationPosition - 1];
-//		}
-//
-//
-//		if (chosenNodePtr->arrayItemsCounter == arraySize && chosenNodePtr->previousNodePtr)   // this node is full of elements, hence we need to check whether there is anythig to shift from the previous node (in case previous node exists at all)
-//		{
-//
-//		}
-//		else
-//		{
-//			chosenNodePtr->arrayPtr[destinationPosition - 1] = nullptr;      // nullification of the remaining first element of Deque
-//		}
-//
-//		if (chosenNodePtr->arrayItemsCounter < arraySize && chosenNodePtr->arrayItemsCounter > 0)
-//		{
-//			for ( ; )
-//			{
-//
-//			}
-//			
-//			chosenNodePtr->chosenPosition--;
-//		}
-//		else      // meaning that chosenNodePtr->arrayItemsCounter == 1
-//		{
-//			chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->previousNodePtr->arrayPtr[arraySize - 1];
-//
-//			if (chosenNodePtr->previousNodePtr->arrayItemsCounter == 1)
-//			{
-//				removeFirstNode();
-//			}
-//			else
-//			{
-//				chosenNodePtr = chosenNodePtr->previousNodePtr;  //  jumping to the previous node and to its last (arraySize - 1) position
-//				chosenNodePtr->chosenPosition = arraySize - 1;   //
-//			}			
-//		}
-//	}
-//}
+
 
 
 
