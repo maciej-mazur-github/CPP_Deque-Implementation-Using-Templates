@@ -62,9 +62,10 @@ public:
 	T popBack();
 	T popFront();
 	void removeChosenElement();
-	void addElement(T& addedElement);
+	void insertElement(T& addedElement);
 	T& returnChosenElement(int index);
 	void setChosenElementIndex(int index);
+	void printCurrentChosenElementLocation();
 
 	//friend ostream& operator<< <T, tab_size> (ostream& out, deck& arg);
 	friend ostream& operator<< <T, arraySize> (ostream& out, Deque& arg);
@@ -76,8 +77,8 @@ private:
 	//void remove_remaining_node();    // remove the one and only node from dequeue (1-node deck)
 	void removeLastNode();   // remove the far right node
 	void removeFirstNode();
-	void shiftElementsRightForInsertion(Node* startNode, int startPosition);
-	void shiftElementsLeftForInsertion(Node* startNode, int startPosition);
+	void shiftElementsRightForInsertion(Node* endNode, int endPosition);
+	//void shiftElementsLeftForInsertion(Node* startNode, int startPosition);
 	void shiftElementsRightForRemoval(Node* startNode, int startPosition);    
 	void shiftElementsLeftForRemoval(Node* startNode, int startPosition);
 	void printChosenNodeArray();
@@ -89,6 +90,126 @@ private:
 
 //################################################################################################
 //################################################################################################
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::printCurrentChosenElementLocation()
+{
+	if (!chosenNodePtr || !firstNodePtr)
+	{
+		cout << "chosenNodePtr currently not set\n" << endl;
+	}
+	
+	int nodeNumber = 0;
+	int elementNumber = 0;
+	Node* jumpingNode = firstNodePtr;
+
+	while (jumpingNode != chosenNodePtr)
+	{
+		elementNumber += jumpingNode->arrayItemsCounter;
+		jumpingNode = jumpingNode->nextNodePtr;
+		nodeNumber++;
+	}
+
+	elementNumber += jumpingNode->chosenPosition;
+
+	cout << "Current chosen element information:\n"
+		<< "\tNode array number: " + nodeNumber
+		<< "\n\tPosition number in node array: " + jumpingNode->chosenPosition
+		<< "\n\tOverall Deque position number: " + elementNumber << endl;
+
+}
+
+
+template <class T, int arraySize>
+T& Deque<T, arraySize>::returnChosenElement(int index)
+{
+	if (!chosenNodePtr)
+	{
+		throw "chosenNodePtr not pointing at anything";
+	}
+
+	return chosenNodePtr->arrayPtr[chosenNodePtr->chosenPosition];
+}
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::removeChosenElement()
+{
+	if (!chosenNodePtr)
+	{
+		return;
+	}
+
+	shiftElementsRightForRemoval(chosenNodePtr, chosenNodePtr->chosenPosition);
+}
+
+
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::shiftElementsRightForInsertion(Node* endNode, int endPosition)
+{
+	Node* jumpingNode;
+	int destinationPosition;
+	int sourceLimitPosition = 0;
+	int sourcePosition;
+
+	if (lastNodePtr->arrayDirection == leftWiseExpandable || (lastNodePtr->arrayDirection == rightWiseExpandable && lastNodePtr->arrayItemsCounter == arraySize))  // in this case it will always be required to add a new rightwise expandable node array to contain the far right shifted element
+	{
+		jumpingNode = lastNodePtr;
+		addRightWiseNode();
+		destinationPosition = 0;
+		sourcePosition = arraySize - 1;
+		lastNodePtr->arrayPtr[destinationPosition] = jumpingNode->arrayPtr[sourcePosition];
+		sourcePosition--;
+		destinationPosition = arraySize - 1;
+	}
+
+	
+
+	while (jumpingNode != endNode)
+	{
+		for (; sourcePosition >= sourceLimitPosition; sourcePosition--, destinationPosition--)
+		{
+			jumpingNode->arrayPtr[destinationPosition] = jumpingNode->arrayPtr[sourcePosition]; 
+		}
+
+		if(jumpingNode->previousNodePtr && jumpingNode->previousNodePtr->arrayItemsCounter > 0)
+		{
+			jumpingNode->arrayPtr[0] = jumpingNode->previousNodePtr->arrayPtr[arraySize - 1];     // shifting between the nodes
+			jumpingNode = jumpingNode->previousNodePtr;
+			sourcePosition = arraySize - 2;
+			destinationPosition = arraySize - 1;
+		}
+
+	}
+
+
+	if (endNode == jumpingNode)
+	{
+		sourceLimitPosition = endPosition;
+
+		for (; sourcePosition >= sourceLimitPosition; sourcePosition--, destinationPosition--)
+		{
+			jumpingNode->arrayPtr[destinationPosition] = jumpingNode->arrayPtr[sourcePosition];
+		}
+	}
+}
+
+template <class T, int arraySize>
+void Deque<T, arraySize>::insertElement(T& addedElement)
+{
+	if (!chosenNodePtr)      // this method can only work when chosenNodePtr is set properly
+	{
+		return;
+	}
+
+	Node* endNode = chosenNodePtr;
+	int endPosition = chosenNodePtr->chosenPosition;
+	shiftElementsRightForInsertion(endNode, endPosition);
+	chosenNodePtr->arrayPtr[endPosition] = addedElement;
+	numberOfElements++;
+}
 
 
 template <class T, int arraySize>
