@@ -26,18 +26,19 @@ class Deque
 		Node* previousNodePtr;
 		int chosenPosition;
 		T* arrayPtr;
-		int arrayDirection = rightWiseExpandable; // 0 means it is expanding right-hand side, 1 means left-hand side
+		int arrayDirection; // 0 means it is expanding right-hand side, 1 means left-hand side
 		int arrayItemsCounter;
 
 		Node(ArrayDirection arrayDirection = rightWiseExpandable)
 		{
 			nextNodePtr = previousNodePtr = nullptr;
 			chosenPosition = arrayItemsCounter = 0;
+			this->arrayDirection = arrayDirection;
 			arrayPtr = new T[arraySize];
 
 			for (int i = 0; i < arraySize; i++)
 			{
-				arrayPtr[i] = nullptr;
+				arrayPtr[i] = NULL;
 			}
 		}
 	};
@@ -274,20 +275,21 @@ T Deque<T, arraySize>::popBack()
 {
 	if (!lastNodePtr)
 	{
-		return nullptr;
+		throw "NULL value returned";
 	}
+	
 
-	T returnedValue = nullptr;
+	T returnedValue;;
 
 	if (lastNodePtr->arrayItemsCounter == 1)
 	{
 		if (lastNodePtr->arrayDirection == leftWiseExpandable)
 		{
-			returnedValue = lastNodePtr[arraySize - 1];
+			returnedValue = lastNodePtr->arrayPtr[arraySize - 1];
 		}
 		else
 		{
-			returnedValue = lastNodePtr[0];
+			returnedValue = lastNodePtr->arrayPtr[0];
 		}
 
 
@@ -307,9 +309,10 @@ T Deque<T, arraySize>::popBack()
 
 		if (lastNodePtr->arrayDirection == rightWiseExpandable)
 		{
-			position = arraySize - lastNodePtr->arrayItemsCounter;
+			position = lastNodePtr->arrayItemsCounter - 1;
 			returnedValue = lastNodePtr->arrayPtr[position];
-			lastNodePtr->arrayPtr[position] = nullptr;
+			T* replacementElementPtr = new T;
+			lastNodePtr->arrayPtr[position] = *replacementElementPtr;
 		}
 		else     // if the last node is leftwise expandable and has more than 1 element, then after popping the desired element all left hand side elements need to be shifted right to fill in the gap
 		{
@@ -317,6 +320,8 @@ T Deque<T, arraySize>::popBack()
 			returnedValue = lastNodePtr->arrayPtr[position];
 			shiftElementsRightForRemoval(lastNodePtr, position);
 		}
+
+		lastNodePtr->arrayItemsCounter--;
 	}
 
 	numberOfElements--;
@@ -328,22 +333,22 @@ T Deque<T, arraySize>::popBack()
 template <class T, int arraySize>
 T Deque<T, arraySize>::popFront()
 {
-	if (!lastNodePtr)
+	if (!firstNodePtr)
 	{
-		return nullptr;
+		throw "NULL value returned";
 	}
 
-	T returnedValue = nullptr;
+	T returnedValue;
 
 	if (firstNodePtr->arrayItemsCounter == 1)
 	{
 		if (lastNodePtr->arrayDirection == leftWiseExpandable)
 		{
-			returnedValue = lastNodePtr[arraySize - 1];
+			returnedValue = lastNodePtr->arrayPtr[arraySize - 1];
 		}
 		else
 		{
-			returnedValue = lastNodePtr[0];
+			returnedValue = lastNodePtr->arrayPtr[0];
 		}
 
 
@@ -365,7 +370,9 @@ T Deque<T, arraySize>::popFront()
 		{
 			position = arraySize - firstNodePtr->arrayItemsCounter;
 			returnedValue = firstNodePtr->arrayPtr[position];
-			firstNodePtr->arrayPtr[position] = nullptr;
+			T* replacementElementPtr = new T;
+			firstNodePtr->arrayPtr[position] = *replacementElementPtr;
+			firstNodePtr->arrayItemsCounter--;
 		}
 		else     // if the last node is righttwise expandable and has more than 1 element, then after popping the desired element all right hand side elements need to be shifted left to fill in the gap
 		{
@@ -376,6 +383,7 @@ T Deque<T, arraySize>::popFront()
 	}
 
 	numberOfElements--;
+	//chosenNodePtr->arrayItemsCounter--;
 	return returnedValue;
 }
 
@@ -388,11 +396,13 @@ void Deque<T, arraySize>::shiftElementsLeftForRemoval(Node* startNode, int start
 {
 	chosenNodePtr = startNode;
 	int destinationPosition = startPosition;
-	int sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+	int sourcePositionLimit = chosenNodePtr->arrayItemsCounter - 1;
+
 
 	if (sourcePositionLimit == destinationPosition && !chosenNodePtr->nextNodePtr)   // if the startPosition is actually the last element in Deque
 	{
-		chosenNodePtr->arrayPtr[destinationPosition] = nullptr;
+		T* replacementElementPtr = new T;
+		chosenNodePtr->arrayPtr[destinationPosition] = *replacementElementPtr;
 		return;
 	}
 
@@ -406,32 +416,38 @@ void Deque<T, arraySize>::shiftElementsLeftForRemoval(Node* startNode, int start
 
 		int sourcePosition = destinationPosition + 1;
 
-		for (; sourcePosition <= sourcePositionLimit; sourcePosition++)
+		for (; sourcePosition <= sourcePositionLimit; sourcePosition++, destinationPosition++)
 		{
 			chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->arrayPtr[sourcePosition];
-			destinationPosition++;
 		}
 
-		if (chosenNodePtr->nextNodePtr)
+		if(destinationPosition == sourcePositionLimit)
 		{
-			if (chosenNodePtr->nextNodePtr->arrayItemsCounter > 0)
+			if (chosenNodePtr->nextNodePtr)
 			{
-				sourcePosition = 0;
-				destinationPosition = arraySize - 1;
-				chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->nextNodePtr->arrayPtr[sourcePosition];
+				if (chosenNodePtr->nextNodePtr->arrayItemsCounter > 0)
+				{
+					sourcePosition = 0;
+					destinationPosition = arraySize - 1;
+					chosenNodePtr->arrayPtr[destinationPosition] = chosenNodePtr->nextNodePtr->arrayPtr[sourcePosition];
+				}
+			}
+			else
+			{
+				T* replacementElementPtr = new T;
+				chosenNodePtr->arrayPtr[destinationPosition] = *replacementElementPtr;   // nullification of the far left element to complete the shifting
+				chosenNodePtr->arrayItemsCounter--;
+				return;
 			}
 		}
-		else
-		{
-			chosenNodePtr->arrayPtr[sourcePosition] = nullptr;   // nullification of the far left element to complete the shifting
-		}
+		
 
 		chosenNodePtr = chosenNodePtr->nextNodePtr;
 		destinationPosition = 0;
 
 		if (chosenNodePtr)    // to avoid memory access violation when calling arrayItemsCounter of a non-existent NULL chosenNodePtr
 		{
-			sourcePositionLimit = arraySize - chosenNodePtr->arrayItemsCounter;
+			sourcePositionLimit = chosenNodePtr->arrayItemsCounter - 1;
 		}
 	}
 }
@@ -456,7 +472,7 @@ void Deque<T, arraySize>::printChosenNodeArray()
 
 	for (int i = 0; i < elementNumber; i++)
 	{
-		cout << chosenNodePtr->arrayPtr[i + bias] + "\t";
+		cout << chosenNodePtr->arrayPtr[i + bias] << "\t";
 	}
 
 	if (chosenNodePtr->arrayDirection == rightWiseExpandable && underscoresNumber > 0)
@@ -516,10 +532,14 @@ Deque<T, arraySize>::~Deque()
 
 	while (lastNodePtr)
 	{
-		removeLastNode();
+		Node* tempLastNodePtr = lastNodePtr;
+		delete[] lastNodePtr->arrayPtr;
+		lastNodePtr = lastNodePtr->previousNodePtr;
+		delete tempLastNodePtr;
 	}
 
 	firstNodePtr = nullptr;
+	lastNodePtr = nullptr;
 	chosenNodePtr = nullptr;
 	numberOfNodes = 0;
 	numberOfElements = 0;
@@ -591,7 +611,8 @@ void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int star
 
 	if (sourcePositionLimit == destinationPosition && !chosenNodePtr->previousNodePtr)   // if the startPosition is actually the first element in Deque
 	{
-		chosenNodePtr->arrayPtr[destinationPosition] = nullptr;
+		T* replacementElementPtr = new T;
+		chosenNodePtr->arrayPtr[destinationPosition] = *replacementElementPtr;
 		return;
 	}
 
@@ -622,7 +643,8 @@ void Deque<T, arraySize>::shiftElementsRightForRemoval(Node* startNode, int star
 		}
 		else
 		{
-			chosenNodePtr->arrayPtr[sourcePosition] = nullptr;   // nullification of the far left element to complete the shifting
+			T* replacementElementPtr = new T;
+			chosenNodePtr->arrayPtr[sourcePosition] = *replacementElementPtr;   // nullification of the far left element to complete the shifting
 		}
 
 		chosenNodePtr = chosenNodePtr->previousNodePtr;
@@ -685,14 +707,15 @@ void Deque<T, arraySize>::pushBack(T& arg)
 	if (!firstNodePtr || lastNodePtr->arrayDirection == leftWiseExpandable || (lastNodePtr->arrayDirection == rightWiseExpandable && lastNodePtr->arrayItemsCounter == arraySize))   // when Deque is empty or it only contains leftwise expandable node arrays, or when its last node array is rightwise expandable but it is full and therefore Deque needs an expansion by another rightwise expandable node array to contain the newly pushed element
 	{
 		addRightWiseNode();
-		lastNodePtr[0] = arg;    // after expanding Deque by another rightwise expandable node array the newly pushed back element will be placed at [0] position
+		lastNodePtr->arrayPtr[0] = arg;    // after expanding Deque by another rightwise expandable node array the newly pushed back element will be placed at [0] position
 	}
 	else
 	{
 		int position = lastNodePtr->arrayItemsCounter;
-		lastNodePtr[position] = arg;
+		lastNodePtr->arrayPtr[position] = arg;
 	}
 
+	lastNodePtr->arrayItemsCounter++;
 	numberOfElements++;
 }
 
@@ -703,22 +726,23 @@ void Deque<T, arraySize>::pushFront(T& arg)
 	if (!firstNodePtr || firstNodePtr->arrayDirection == rightWiseExpandable || (firstNodePtr->arrayDirection == leftWiseExpandable && firstNodePtr->arrayItemsCounter == arraySize))   // analogous to pushBack(T& arg) start
 	{
 		addLeftWiseNode();
-		firstNodePtr[arraySize - 1] = arg;
+		firstNodePtr->arrayPtr[arraySize - 1] = arg;
 	}
 	else
 	{
 		int position = arraySize - firstNodePtr->arrayItemsCounter - 1;
-		firstNodePtr[position] = arg;
+		firstNodePtr->arrayPtr[position] = arg;
 	}
 
 	numberOfElements++;
+	firstNodePtr->arrayItemsCounter++;
 }
 
 
 template <class T, int arraySize>
 void Deque<T, arraySize>::addLeftWiseNode()
 {
-	Node* newNodePtr = new Node();    // default constructor argument value is rightWiseExpandable
+	Node* newNodePtr = new Node(leftWiseExpandable);    // default constructor argument value is rightWiseExpandable
 
 	if (!firstNodePtr)              // if Deque was empty the newly added node has to become either the first and the last node
 	{
