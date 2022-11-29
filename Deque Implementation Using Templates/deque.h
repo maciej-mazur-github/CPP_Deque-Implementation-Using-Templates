@@ -35,11 +35,6 @@ class Deque
 			chosenPosition = arrayItemsCounter = 0;
 			this->arrayDirection = arrayDirection;
 			arrayPtr = new T[arraySize];
-
-			/*for (int i = 0; i < arraySize; i++)
-			{
-				arrayPtr[i] = NULL;
-			}*/
 		}
 	};
 
